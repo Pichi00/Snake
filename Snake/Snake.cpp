@@ -13,7 +13,7 @@
 const int WindowWidth = 720;
 const int WindowHeight = 720;
 
-float randX{ 0 }, randY{ 0 };
+
 
 //Okreslenie kierunku
 /*
@@ -41,12 +41,6 @@ int main(){
     Player player(WindowWidth/2, WindowHeight/2);
     Collectible coll;
 
-    srand(time(NULL));
-
-    randX = 40.f * float(rand() % 18);
-    randY = 40.f * float(rand() % 18);
-    std::cout << randX << std::endl << randY << std::endl;
-    coll.setPosition(randX, randY);
 
     while (window.isOpen()){
         window.clear();
@@ -55,17 +49,28 @@ int main(){
             if (event.type == sf::Event::Closed) window.close();
 
             if (event.type == sf::Event::KeyPressed) {
-                if (event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Up && dir != 1) dir = 0;
-                else if (event.key.code == sf::Keyboard::S || event.key.code == sf::Keyboard::Down && dir != 0) dir = 1;
-                else if (event.key.code == sf::Keyboard::D || event.key.code == sf::Keyboard::Right && dir != 3) dir = 2;
-                else if (event.key.code == sf::Keyboard::A || event.key.code == sf::Keyboard::Left && dir != 2) dir = 3;
+                if ((event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Up) && dir != 1) dir = 0;
+                else if ((event.key.code == sf::Keyboard::S || event.key.code == sf::Keyboard::Down) && dir != 0) dir = 1;
+                else if ((event.key.code == sf::Keyboard::D || event.key.code == sf::Keyboard::Right) && dir != 3) dir = 2;
+                else if ((event.key.code == sf::Keyboard::A || event.key.code == sf::Keyboard::Left) && dir != 2) dir = 3;
             }
         }
 
+        for (int i = size; i > 0; i--) {
+            p[i].x = p[i - 1].x;
+            p[i].y = p[i - 1].y;
+        }
+
         if (dir == 0) p[0].y -= step;
-        else if (dir == 1) p[0].y += step;
-        else if (dir == 2) p[0].x += step;
-        else if (dir == 3) p[0].x -= step;
+        if (dir == 1) p[0].y += step;
+        if (dir == 2) p[0].x += step;
+        if (dir == 3) p[0].x -= step;
+
+        if (p[0].x == coll.getPosition().x && p[0].y == coll.getPosition().y) {
+            size++;
+            coll.randomPosition();
+        }
+
         for (int i = 0; i < size; i++) {
             player.setPosition(p[i].x, p[i].y);
             window.draw(player);
