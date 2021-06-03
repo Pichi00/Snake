@@ -5,12 +5,15 @@
 
 //Klasy
 #include "Player.h"
+#include "Collectible.h"
 
 //using namespace sf;
 
 /*Wymiary okna*/
 const int WindowWidth = 720;
 const int WindowHeight = 720;
+
+float randX{ 0 }, randY{ 0 };
 
 //Okreslenie kierunku
 /*
@@ -23,7 +26,7 @@ char dir{ 2 };
 int size{ 1 };
 
 
-int speed = 120;
+int speed = 140;
 const int step = 40;
 
 struct Point{
@@ -32,10 +35,18 @@ struct Point{
 }p[100];
 
 int main(){
-    sf::RenderWindow window{ sf::VideoMode(WindowWidth,WindowHeight), "Snake" };
+    sf::RenderWindow window{ sf::VideoMode(WindowWidth,WindowHeight), "Snake" , sf::Style::Titlebar | sf::Style::Close };
     window.setFramerateLimit(60);
 
     Player player(WindowWidth/2, WindowHeight/2);
+    Collectible coll;
+
+    srand(time(NULL));
+
+    randX = 40.f * float(rand() % 18);
+    randY = 40.f * float(rand() % 18);
+    std::cout << randX << std::endl << randY << std::endl;
+    coll.setPosition(randX, randY);
 
     while (window.isOpen()){
         window.clear();
@@ -44,10 +55,10 @@ int main(){
             if (event.type == sf::Event::Closed) window.close();
 
             if (event.type == sf::Event::KeyPressed) {
-                if (event.key.code == sf::Keyboard::W && dir != 1) dir = 0;
-                else if (event.key.code == sf::Keyboard::S && dir != 0) dir = 1;
-                else if (event.key.code == sf::Keyboard::D && dir != 3) dir = 2;
-                else if (event.key.code == sf::Keyboard::A && dir != 2) dir = 3;
+                if (event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Up && dir != 1) dir = 0;
+                else if (event.key.code == sf::Keyboard::S || event.key.code == sf::Keyboard::Down && dir != 0) dir = 1;
+                else if (event.key.code == sf::Keyboard::D || event.key.code == sf::Keyboard::Right && dir != 3) dir = 2;
+                else if (event.key.code == sf::Keyboard::A || event.key.code == sf::Keyboard::Left && dir != 2) dir = 3;
             }
         }
 
@@ -59,6 +70,7 @@ int main(){
             player.setPosition(p[i].x, p[i].y);
             window.draw(player);
         }
+        window.draw(coll);
       
         window.display(); 
         Sleep(speed);
