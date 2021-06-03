@@ -24,7 +24,7 @@ void Collectible::randomPosition() {
 	srand(time(NULL));
 	float randX = 40.f * float(rand() % 18);
 	float randY = 40.f * float(rand() % 18);
-	std::cout << randX << std::endl << randY << std::endl;
+	//std::cout << randX << std::endl << randY << std::endl;
 	setPosition(randX, randY);
 }
 
