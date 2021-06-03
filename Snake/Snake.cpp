@@ -32,7 +32,7 @@ const int step = 40;
 struct Point{
     int x = 0;
     int y = 0;
-}p[100];
+}p[350];
 
 int main(){
     sf::RenderWindow window{ sf::VideoMode(WindowWidth,WindowHeight), "Snake" , sf::Style::Titlebar | sf::Style::Close };
@@ -61,10 +61,24 @@ int main(){
             p[i].y = p[i - 1].y;
         }
 
-        if (dir == 0) p[0].y -= step;
-        if (dir == 1) p[0].y += step;
-        if (dir == 2) p[0].x += step;
-        if (dir == 3) p[0].x -= step;
+        if (dir == 0) {
+            if (p[0].y > 0) p[0].y -= step;            
+            else p[0].y += WindowHeight-step;                
+        }
+           
+        if (dir == 1) {
+            if (p[0].y < WindowHeight - step) p[0].y += step;
+            else p[0].y -= WindowHeight - step ;
+        } 
+        if (dir == 2) {
+            if (p[0].x < WindowWidth - step ) p[0].x += step;
+            else p[0].x -= WindowWidth - step;
+        }
+        if (dir == 3) {
+            if (p[0].x > 0) p[0].x -= step;
+            else p[0].x += WindowWidth - step;
+        }
+            
 
         if (p[0].x == coll.getPosition().x && p[0].y == coll.getPosition().y) {
             size++;
