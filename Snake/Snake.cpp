@@ -2,13 +2,12 @@
 //Biblioteki
 #include <SFML/Graphics.hpp>
 #include <iostream>
-#include <windows.h>
+#include <windows.h> 
 
 //Klasy
 #include "Player.h"
 #include "Collectible.h"
 #include "Button.h"
-//using namespace sf;
 
 /*Wymiary okna*/
 const int WindowWidth = 720;
@@ -16,7 +15,7 @@ const int WindowHeight = 720;
 
 /*Stany w których może być gra*/
 enum STATES { MAIN_MENU = 1, GAMEPLAY, GAME_OVER, HOW_TO_PLAY, BEST_SCORES, PAUSE };
-char GAME_STATE = STATES::MAIN_MENU;
+char GAME_STATE = STATES::GAMEPLAY;
 
 //Okreslenie kierunku
 /*
@@ -26,10 +25,11 @@ char GAME_STATE = STATES::MAIN_MENU;
     3 - lewo
 */
 char dir{ 2 }; 
+bool can_change_dir = true;
 int size{ 1 };
 
 
-int speed = 140;
+int speed = 120;
 const int step = 40;
 
 struct Point{
@@ -74,6 +74,15 @@ int main(){
     }
     MainMenu.setTexture(MainMenuBackground);
 
+    /*GAME OVER SETUP*/
+    sf::Text gameOverText;
+    gameOverText.setFont(font);
+    gameOverText.setColor({ 86, 27, 174 });
+    gameOverText.setCharacterSize(48);
+    gameOverText.setOrigin({ 170,20 });
+    gameOverText.setPosition({ WindowWidth/2, WindowHeight/8 });
+    gameOverText.setString("GAME OVER");
+
     while (window.isOpen())
     {
         window.clear();
@@ -81,11 +90,23 @@ int main(){
         while (window.pollEvent(event)){
             if (event.type == sf::Event::Closed) window.close();
 
-            if (event.type == sf::Event::KeyPressed) {
-                if ((event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Up) && dir != 1) dir = 0;
-                else if ((event.key.code == sf::Keyboard::S || event.key.code == sf::Keyboard::Down) && dir != 0) dir = 1;
-                else if ((event.key.code == sf::Keyboard::D || event.key.code == sf::Keyboard::Right) && dir != 3) dir = 2;
-                else if ((event.key.code == sf::Keyboard::A || event.key.code == sf::Keyboard::Left) && dir != 2) dir = 3;
+            if (event.type == sf::Event::KeyPressed && can_change_dir) {
+                if ((event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Up) && dir != 1) {
+                    dir = 0;
+                    can_change_dir = false;
+                }
+                else if ((event.key.code == sf::Keyboard::S || event.key.code == sf::Keyboard::Down) && dir != 0) {
+                    dir = 1;
+                    can_change_dir = false;
+                }
+                else if ((event.key.code == sf::Keyboard::D || event.key.code == sf::Keyboard::Right) && dir != 3) {
+                    dir = 2;
+                    can_change_dir = false;
+                }
+                else if ((event.key.code == sf::Keyboard::A || event.key.code == sf::Keyboard::Left) && dir != 2) {
+                    dir = 3;
+                    can_change_dir = false;
+                }
             }
         }
         switch (GAME_STATE) {
@@ -111,6 +132,7 @@ int main(){
             window.draw(bestScoresButton);
             window.draw(howToButton);
             window.draw(exitGameButton);
+            window.display();
             /*----/MAIN MENU-----*/
             break;
 
@@ -119,6 +141,16 @@ int main(){
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
                 GAME_STATE = STATES::PAUSE;
             }
+
+            if (size > 1) {
+                for (int i = 1; i < size; i++) {
+                    if (p[0].x == p[i].x && p[0].y == p[i].y) {
+                        window.clear();
+                        GAME_STATE = STATES::GAME_OVER;
+                    }
+                }
+            }
+           
 
             for (int i = size; i > 0; i--) {
                 p[i].x = p[i - 1].x;
@@ -150,17 +182,31 @@ int main(){
             }
 
             for (int i = 0; i < size; i++) {
+                if (i == 0) player.setColor(sf::Color::Red);
+                else player.setColor(sf::Color::White);
                 player.setPosition(p[i].x, p[i].y);
                 window.draw(player);
             }
                 window.draw(coll);
-
+                can_change_dir = true;
+                window.display();
+                Sleep(speed);
             /*-----/GAMEPLAY-----*/;
             break;
                   
         case GAME_OVER:
             /*-----GAME OVER-----*/
-            
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::R)) {
+                GAME_STATE = STATES::GAMEPLAY;
+            }
+            for (int i = 0; i < size; i++) {
+                if (i == 0) player.setColor(sf::Color::Red);
+                else player.setColor(sf::Color::White);
+                player.setPosition(p[i].x, p[i].y);
+                window.draw(player);
+            }
+            window.draw(gameOverText);
+            window.display();
             /*-----/GAME OVER-----*/
             break;
 
@@ -219,8 +265,8 @@ int main(){
         }*/
         //window.draw(coll);
       
-        window.display(); 
-        Sleep(speed);
+        
+        //can_change_dir = true;
     }
     return 0;
 }

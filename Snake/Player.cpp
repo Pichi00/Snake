@@ -21,7 +21,10 @@ void Player::setPosition(float t_X, float t_Y) {
 	playerSprite.setPosition(t_X, t_Y);
 }
 
+void Player::setColor(sf::Color c) {
+	playerSprite.setColor(c);
+}
+
 void Player::draw(sf::RenderTarget& target, sf::RenderStates state) const {
 	target.draw(this->playerSprite, state);
 }
-
