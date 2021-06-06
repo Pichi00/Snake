@@ -15,7 +15,7 @@ const int WindowHeight = 720;
 
 /*Stany w których może być gra*/
 enum STATES { MAIN_MENU = 1, GAMEPLAY, GAME_OVER, HOW_TO_PLAY, BEST_SCORES, PAUSE };
-char GAME_STATE = STATES::GAMEPLAY;
+char GAME_STATE = STATES::MAIN_MENU;
 
 //Okreslenie kierunku
 /*
@@ -27,6 +27,7 @@ char GAME_STATE = STATES::GAMEPLAY;
 char dir{ 2 }; 
 bool can_change_dir = true;
 int size{ 1 };
+unsigned int score{ 0 };
 
 
 int speed = 120;
@@ -34,7 +35,7 @@ const int step = 40;
 
 struct Point{
     int x = 0;
-    int y = 0;
+    int y = 80;
 }p[350];
 
 int main(){
@@ -73,6 +74,22 @@ int main(){
         std::cout << "Error: Texture not found" << std::endl;
     }
     MainMenu.setTexture(MainMenuBackground);
+
+    /*GAMEPLAY SETUP*/
+    sf::Sprite gameplayBackground;
+    sf::Texture gameplayBackgroundTexture;
+    if (!gameplayBackgroundTexture.loadFromFile("Graphics/background.png")) {
+        std::cout << "Error: Texture not found" << std::endl;
+    }
+    gameplayBackground.setTexture(gameplayBackgroundTexture);
+
+    sf::Text scoreText;
+    scoreText.setFont(font);
+    scoreText.setColor({ 86, 27, 174 });
+    scoreText.setCharacterSize(18);
+    scoreText.setOrigin({ 0,0 });
+    scoreText.setPosition({ 20, 20 });
+    scoreText.setString("Score: "+std::to_string(score));
 
     /*GAME OVER SETUP*/
     sf::Text gameOverText;
@@ -158,13 +175,13 @@ int main(){
             }
 
             if (dir == 0) {
-                if (p[0].y > 0) p[0].y -= step;
-                else p[0].y += WindowHeight - step;
+                if (p[0].y > 80) p[0].y -= step;
+                else p[0].y += WindowHeight - (step+80);
             }
 
             if (dir == 1) {
                 if (p[0].y < WindowHeight - step) p[0].y += step;
-                else p[0].y -= WindowHeight - step;
+                else p[0].y -= WindowHeight - (step+80);
             }
             if (dir == 2) {
                 if (p[0].x < WindowWidth - step) p[0].x += step;
@@ -178,16 +195,21 @@ int main(){
 
             if (p[0].x == coll.getPosition().x && p[0].y == coll.getPosition().y) {
                 size++;
+                score += 10;
+                scoreText.setString("Score: " + std::to_string(score));
+                
                 coll.randomPosition();
             }
 
             for (int i = 0; i < size; i++) {
-                if (i == 0) player.setColor(sf::Color::Red);
+                if (i == 0) player.setColor(sf::Color::Green);
                 else player.setColor(sf::Color::White);
                 player.setPosition(p[i].x, p[i].y);
                 window.draw(player);
             }
+                window.draw(gameplayBackground);
                 window.draw(coll);
+                window.draw(scoreText);
                 can_change_dir = true;
                 window.display();
                 Sleep(speed);
@@ -200,7 +222,7 @@ int main(){
                 GAME_STATE = STATES::GAMEPLAY;
             }
             for (int i = 0; i < size; i++) {
-                if (i == 0) player.setColor(sf::Color::Red);
+                if (i == 0) player.setColor(sf::Color::Green);
                 else player.setColor(sf::Color::White);
                 player.setPosition(p[i].x, p[i].y);
                 window.draw(player);
@@ -224,7 +246,9 @@ int main(){
 
             /*------PAUSE-----*/
         case PAUSE:
-            
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
+                GAME_STATE = STATES::GAMEPLAY;
+            }
             /*------/PAUSE-----*/
             break;
         }
