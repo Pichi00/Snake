@@ -8,6 +8,7 @@ Collectible::Collectible() {
 		std::cout << "Blad ladowania tekstury gracza. Upewnij sie, ze posiadasz plik \"" << collTexturePath << "\"" << std::endl;
 	}
 	collSprite.setTexture(collTexture);
+	collSprite.setOrigin(collWidth / 2, collHeight / 2);
 	randomPosition();
 }
 
@@ -21,8 +22,8 @@ sf::Vector2f Collectible::getPosition() {
 
 void Collectible::randomPosition() {
 	srand(time(NULL));
-	float randX = 40.f * float(rand() % 18);
-	float randY = 40.f * float(rand() % 16 + 2);
+	float randX = 40.f * float(rand() % 18) + collWidth/2;
+	float randY = 40.f * float(rand() % 16 + 2) + collHeight/2;
 	//std::cout << randX << std::endl << randY << std::endl;
 	setPosition(randX, randY);
 }

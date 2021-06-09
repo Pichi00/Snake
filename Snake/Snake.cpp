@@ -15,27 +15,29 @@ const int WindowHeight = 720;
 
 /*Stany w których może być gra*/
 enum STATES { MAIN_MENU = 1, GAMEPLAY, GAME_OVER, HOW_TO_PLAY, BEST_SCORES, PAUSE };
-char GAME_STATE = STATES::MAIN_MENU;
+char GAME_STATE = STATES::GAMEPLAY;
 
 //Okreslenie kierunku
 /*
     0 - gora
-    1 - dol
-    2 - prawo
+    1 - prawo
+    2 - dol
     3 - lewo
 */
-char dir{ 2 }; 
+char dir{ 1 }; 
 bool can_change_dir = true;
 int size{ 1 };
 unsigned int score{ 0 };
+
+
 
 
 int speed = 120;
 const int step = 40;
 
 struct Point{
-    int x = 0;
-    int y = 80;
+    int x = 20;
+    int y = 100;
 }p[350];
 
 int main(){
@@ -85,7 +87,8 @@ int main(){
 
     sf::Text scoreText;
     scoreText.setFont(font);
-    scoreText.setColor({ 86, 27, 174 });
+   // scoreText.setColor({ 86, 27, 174 });
+    scoreText.setColor(sf::Color::White);
     scoreText.setCharacterSize(18);
     scoreText.setOrigin({ 0,0 });
     scoreText.setPosition({ 20, 20 });
@@ -94,10 +97,11 @@ int main(){
     /*GAME OVER SETUP*/
     sf::Text gameOverText;
     gameOverText.setFont(font);
-    gameOverText.setColor({ 86, 27, 174 });
+    //gameOverText.setColor({ 86, 27, 174 });
+    gameOverText.setColor(sf::Color::White);
     gameOverText.setCharacterSize(48);
-    gameOverText.setOrigin({ 170,20 });
-    gameOverText.setPosition({ WindowWidth/2, WindowHeight/8 });
+    gameOverText.setOrigin({ 0,0 });
+    gameOverText.setPosition({ WindowWidth/5, WindowHeight/2 });
     gameOverText.setString("GAME OVER");
 
     while (window.isOpen())
@@ -108,19 +112,19 @@ int main(){
             if (event.type == sf::Event::Closed) window.close();
 
             if (event.type == sf::Event::KeyPressed && can_change_dir) {
-                if ((event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Up) && dir != 1) {
+                if ((event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Up) && dir != 2) {
                     dir = 0;
                     can_change_dir = false;
                 }
                 else if ((event.key.code == sf::Keyboard::S || event.key.code == sf::Keyboard::Down) && dir != 0) {
-                    dir = 1;
-                    can_change_dir = false;
-                }
-                else if ((event.key.code == sf::Keyboard::D || event.key.code == sf::Keyboard::Right) && dir != 3) {
                     dir = 2;
                     can_change_dir = false;
                 }
-                else if ((event.key.code == sf::Keyboard::A || event.key.code == sf::Keyboard::Left) && dir != 2) {
+                else if ((event.key.code == sf::Keyboard::D || event.key.code == sf::Keyboard::Right) && dir != 3) {
+                    dir = 1;
+                    can_change_dir = false;
+                }
+                else if ((event.key.code == sf::Keyboard::A || event.key.code == sf::Keyboard::Left) && dir != 1) {
                     dir = 3;
                     can_change_dir = false;
                 }
@@ -159,36 +163,26 @@ int main(){
                 GAME_STATE = STATES::PAUSE;
             }
 
-            if (size > 1) {
-                for (int i = 1; i < size; i++) {
-                    if (p[0].x == p[i].x && p[0].y == p[i].y) {
-                        window.clear();
-                        GAME_STATE = STATES::GAME_OVER;
-                    }
-                }
-            }
-           
-
             for (int i = size; i > 0; i--) {
                 p[i].x = p[i - 1].x;
                 p[i].y = p[i - 1].y;
             }
 
             if (dir == 0) {
-                if (p[0].y > 80) p[0].y -= step;
+                if (p[0].y > 100) p[0].y -= step;
                 else p[0].y += WindowHeight - (step+80);
             }
 
-            if (dir == 1) {
+            if (dir == 2) {
                 if (p[0].y < WindowHeight - step) p[0].y += step;
                 else p[0].y -= WindowHeight - (step+80);
             }
-            if (dir == 2) {
+            if (dir == 1) {
                 if (p[0].x < WindowWidth - step) p[0].x += step;
                 else p[0].x -= WindowWidth - step;
             }
             if (dir == 3) {
-                if (p[0].x > 0) p[0].x -= step;
+                if (p[0].x > 20) p[0].x -= step;
                 else p[0].x += WindowWidth - step;
             }
 
@@ -201,18 +195,27 @@ int main(){
                 coll.randomPosition();
             }
 
-            for (int i = 0; i < size; i++) {
-                if (i == 0) player.setColor(sf::Color::Green);
-                else player.setColor(sf::Color::White);
+                window.draw(gameplayBackground);
+            for (int i = size - 1; i >= 0; i--) {
+                player.setTexture(i, dir);
                 player.setPosition(p[i].x, p[i].y);
                 window.draw(player);
-            }
-                window.draw(gameplayBackground);
+            }                
                 window.draw(coll);
                 window.draw(scoreText);
                 can_change_dir = true;
                 window.display();
                 Sleep(speed);
+
+                /*Warunek sprawdzający czy głowa węża nie napotkała jakiegoś jego segmentu*/
+                if (size > 1) {
+                    for (int i = 1; i < size; i++) {
+                        if (p[0].x == p[i].x && p[0].y == p[i].y) {
+                            window.clear();
+                            GAME_STATE = STATES::GAME_OVER;
+                        }
+                    }
+                }
             /*-----/GAMEPLAY-----*/;
             break;
                   
@@ -221,13 +224,16 @@ int main(){
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::R)) {
                 GAME_STATE = STATES::GAMEPLAY;
             }
-            for (int i = 0; i < size; i++) {
-                if (i == 0) player.setColor(sf::Color::Green);
-                else player.setColor(sf::Color::White);
+
+            window.draw(gameplayBackground);
+            for (int i = size-1; i >=0; i--) {
+                player.setTexture(i, dir);
+                player.setColor(sf::Color::Red);
                 player.setPosition(p[i].x, p[i].y);
                 window.draw(player);
             }
             window.draw(gameOverText);
+            window.draw(scoreText);
             window.display();
             /*-----/GAME OVER-----*/
             break;

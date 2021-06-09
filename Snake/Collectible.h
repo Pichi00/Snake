@@ -13,7 +13,8 @@ public:
 private:
 	sf::Sprite collSprite;
 	sf::Texture collTexture;
-	float collScale{ 1.f };
+	float collWidth{ 40.f };
+	float collHeight{ 40.f };
 
 	void draw(sf::RenderTarget& target, sf::RenderStates state) const override;
 };
