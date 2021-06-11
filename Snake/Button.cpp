@@ -1,13 +1,14 @@
 #include "Button.h"
+sf::Color mainColor(60, 167, 58);
+sf::Color hoverColor(50, 157, 48);
 
 Button::Button(float t_X, float t_Y) {
 	this->hoverCursor.loadFromSystem(sf::Cursor::Hand);
-	this->defaultCursor.loadFromSystem(sf::Cursor::Arrow);
-	sf::Color color(86, 27, 174);
+	this->defaultCursor.loadFromSystem(sf::Cursor::Arrow);	
 	shape.setOrigin({ buttonWidth / 2, buttonHeight / 2 });
 	shape.setPosition(t_X, t_Y);
 	shape.setSize({ buttonWidth, buttonHeight });
-	shape.setFillColor(color);
+	shape.setFillColor(mainColor);
 
 	textSprite.setOrigin({ buttonWidth / 2, buttonHeight / 2 });
 	textSprite.setPosition(t_X, t_Y);
@@ -48,12 +49,12 @@ bool Button::isHovered(sf::RenderWindow& w) {
 		sf::Mouse::getPosition(w).y > top() &&
 		sf::Mouse::getPosition(w).y < bottom()) {
 
-		shape.setFillColor({ 53, 15, 109 });
+		shape.setFillColor(hoverColor);
 		return true;
 	}
 
 	else {
-		shape.setFillColor({ 86, 27, 174 });
+		shape.setFillColor(mainColor);
 		return false;
 	}
 }

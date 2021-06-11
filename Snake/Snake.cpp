@@ -14,8 +14,8 @@ const int WindowWidth = 720;
 const int WindowHeight = 720;
 
 /*Stany w których może być gra*/
-enum STATES { MAIN_MENU = 1, GAMEPLAY, GAME_OVER, HOW_TO_PLAY, BEST_SCORES, PAUSE };
-char GAME_STATE = STATES::GAMEPLAY;
+enum STATES { MAIN_MENU = 1, GAMEPLAY, GAME_OVER, OPTIONS, HOW_TO_PLAY, BEST_SCORES, PAUSE };
+char GAME_STATE = STATES::MAIN_MENU;
 
 //Okreslenie kierunku
 /*
@@ -61,21 +61,23 @@ int main(){
     sf::Texture MainMenuBackground;
     sf::Text authorText;
 
-    Button startGameButton(187, 173);
+    Button startGameButton(WindowWidth/2, 273);
     startGameButton.setTextTexture("Graphics/grajtxt.png");
-    Button bestScoresButton(187, 253);
+    Button optionsButton(WindowWidth / 2, 353);
+    optionsButton.setTextTexture("Graphics/optionstxt.png");
+    Button bestScoresButton(WindowWidth / 2, 433);
     bestScoresButton.setTextTexture("Graphics/bestscorestxt.png");
-    Button howToButton(187, 333);
+    Button howToButton(WindowWidth / 2, 513);
     howToButton.setTextTexture("Graphics/howtotxt.png");
-    Button exitGameButton(187, 413);
+    Button exitGameButton(WindowWidth / 2, 593);
     exitGameButton.setTextTexture("Graphics/wyjdztxt.png");
 
     authorText.setFont(font);
-    authorText.setColor({ 86, 27, 174 });
+    authorText.setColor(sf::Color::White);
     authorText.setCharacterSize(14);
-    authorText.setOrigin({ 170,20 });
-    authorText.setPosition({ WindowWidth - 220, WindowHeight - 5 });
-    authorText.setString("Author: PK/WM");
+    //authorText.setOrigin({ 170,20 });
+    authorText.setPosition({ 10, WindowHeight - 25 });
+    authorText.setString("Authors: Piotr Kolodziejski & Wiktor Machon");
 
     if (!MainMenuBackground.loadFromFile("Graphics/mainmenu.png")) {
         std::cout << "Error: Texture not found" << std::endl;
@@ -142,6 +144,9 @@ int main(){
             if (startGameButton.isPressed(window)) {
                 GAME_STATE = STATES::GAMEPLAY;
             }
+            else if (optionsButton.isPressed(window)) {
+                GAME_STATE = STATES::OPTIONS;
+            }
             else if (bestScoresButton.isPressed(window)) {
                 GAME_STATE = STATES::BEST_SCORES;
             }
@@ -155,6 +160,7 @@ int main(){
             window.draw(MainMenu);
             window.draw(authorText);
             window.draw(startGameButton);
+            window.draw(optionsButton);
             window.draw(bestScoresButton);
             window.draw(howToButton);
             window.draw(exitGameButton);
