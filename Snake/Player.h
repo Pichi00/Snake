@@ -13,7 +13,7 @@ public:
 	void update(char dir);
 	void setPosition(float t_X, float t_Y);
 	void setColor(sf::Color c);
-	void setTexture(int x, char rot);
+	void setTexture(int x, char rot, int size);
 private:
 	sf::Sprite playerSprite;
 	sf::Texture playerTexture;

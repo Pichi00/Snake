@@ -25,8 +25,9 @@ char GAME_STATE = STATES::GAMEPLAY;
     3 - lewo
 */
 char dir{ 1 }; 
+char last_segment_dir{ 1 };
 bool can_change_dir = true;
-int size{ 1 };
+int size{ 2 };
 unsigned int score{ 0 };
 
 
@@ -39,6 +40,10 @@ struct Point{
     int x = 20;
     int y = 100;
 }p[350];
+
+struct PointDir {
+    int dir{ 1 };
+}pd[350];
 
 int main(){
     sf::RenderWindow window{ sf::VideoMode(WindowWidth,WindowHeight), "Snake" , sf::Style::Titlebar | sf::Style::Close };
@@ -165,8 +170,14 @@ int main(){
 
             for (int i = size; i > 0; i--) {
                 p[i].x = p[i - 1].x;
-                p[i].y = p[i - 1].y;
+                p[i].y = p[i - 1].y;   
+                pd[i].dir = pd[i-1].dir;
+                //std::cout << pd[i].dir << std::endl;
             }
+           /* std::cout << "---" << std::endl;
+            Sleep(200);*/
+
+            
 
             if (dir == 0) {
                 if (p[0].y > 100) p[0].y -= step;
@@ -186,6 +197,14 @@ int main(){
                 else p[0].x += WindowWidth - step;
             }
 
+            pd[0].dir = dir;
+            
+            /* if (p[size - 1].x < p[size - 2].x) last_segment_dir = 1;
+             else if (p[size - 1].x > p[size - 2].x) last_segment_dir = 3;
+             else if (p[size - 1].y > p[size - 2].y) last_segment_dir = 0;
+             else last_segment_dir = 2;*/
+            
+            
 
             if (p[0].x == coll.getPosition().x && p[0].y == coll.getPosition().y) {
                 size++;
@@ -195,9 +214,12 @@ int main(){
                 coll.randomPosition();
             }
 
+
                 window.draw(gameplayBackground);
             for (int i = size - 1; i >= 0; i--) {
-                player.setTexture(i, dir);
+                /*if (i == size - 1) player.setTexture(i, last_segment_dir, size - 1);
+                else player.setTexture(i, dir, size-1);*/
+                player.setTexture(i, pd[i].dir, size - 1);
                 player.setPosition(p[i].x, p[i].y);
                 window.draw(player);
             }                
@@ -227,7 +249,9 @@ int main(){
 
             window.draw(gameplayBackground);
             for (int i = size-1; i >=0; i--) {
-                player.setTexture(i, dir);
+                /*if(i==size-1) player.setTexture(i, last_segment_dir, size - 1);
+                else player.setTexture(i, dir,size-1);*/
+                player.setTexture(i, pd[i].dir, size - 1);
                 player.setColor(sf::Color::Red);
                 player.setPosition(p[i].x, p[i].y);
                 window.draw(player);
