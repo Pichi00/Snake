@@ -2,7 +2,10 @@
 //Biblioteki
 #include <SFML/Graphics.hpp>
 #include <iostream>
+#include <iomanip>
 #include <windows.h> 
+#include <sstream>
+#include <fstream>
 
 //Klasy
 #include "Player.h"
@@ -43,6 +46,10 @@ struct Point{
 }p[350];
 
 void new_game(Player& player, Collectible& coll);
+void saveResult(unsigned int points);
+void getResults(sf::Text scoresText[]);
+
+void sort(int tab[15], std::string s[15][3]);
 
 
 int main(){
@@ -134,6 +141,14 @@ int main(){
         std::cout << "Error: Texture not found" << std::endl;
     }
     bestScoresBackground.setTexture(bestScoresBackgroundTexture);
+    sf::Text scoresText[15];
+    for (int i = 0; i < 15; i++) {
+        scoresText[i].setFont(font);
+        scoresText[i].setFillColor(sf::Color::White);
+        scoresText[i].setPosition({ 50,150 + 30 * static_cast<float>(i) });
+        scoresText[i].setCharacterSize(16);
+    }
+
 
     while (window.isOpen())
     {
@@ -173,6 +188,7 @@ int main(){
                 GAME_STATE = STATES::OPTIONS;
             }
             else if (bestScoresButton.isPressed(window)) {
+                getResults(scoresText);
                 GAME_STATE = STATES::BEST_SCORES;
             }
             else if (howToButton.isPressed(window)) {
@@ -231,12 +247,6 @@ int main(){
 
             p[0].dir = dir;
             
-            /* if (p[size - 1].x < p[size - 2].x) last_segment_dir = 1;
-             else if (p[size - 1].x > p[size - 2].x) last_segment_dir = 3;
-             else if (p[size - 1].y > p[size - 2].y) last_segment_dir = 0;
-             else last_segment_dir = 2;*/
-            
-            
 
             if (p[0].x == coll.getPosition().x && p[0].y == coll.getPosition().y) {
                 size++;
@@ -266,6 +276,7 @@ int main(){
                     for (int i = 1; i < size; i++) {
                         if (p[0].x == p[i].x && p[0].y == p[i].y) {
                             window.clear();
+                            saveResult(score);
                             GAME_STATE = STATES::GAME_OVER;
                         }
                     }
@@ -283,8 +294,7 @@ int main(){
             }
 
             window.draw(gameplayBackground);
-            window.draw(restartGameButton);
-            window.draw(backToMenuButton);
+            
             for (int i = size-1; i >=0; i--) {
                 /*if(i==size-1) player.setTexture(i, last_segment_dir, size - 1);
                 else player.setTexture(i, dir,size-1);*/
@@ -292,6 +302,8 @@ int main(){
                 player.setPosition(p[i].x, p[i].y);
                 window.draw(player);
             }
+            window.draw(restartGameButton);
+            window.draw(backToMenuButton);
             window.draw(gameOverText);
             window.draw(scoreText);
             window.display();
@@ -312,7 +324,11 @@ int main(){
             if (backToMenuButton.isPressed(window)) {
                 GAME_STATE = STATES::MAIN_MENU;
             }
+
             window.draw(bestScoresBackground);
+            for (int i = 0; i < 15; i++) {
+                window.draw(scoresText[i]);
+            }
             window.draw(backToMenuButton);
             window.display();
             /*------/BEST SCORES-----*/
@@ -352,4 +368,87 @@ void new_game(Player& player, Collectible& coll){
     player.setPosition(p[0].x, p[0].y);
     size = 2;
     GAME_STATE = STATES::GAMEPLAY;
+}
+
+void saveResult(unsigned int points) {
+    std::fstream plik;
+    std::string scores[15][3];
+    int tab[15];
+
+    plik.open("results.txt", std::ios::in);
+    for (int i = 0; i < 15; i++) {
+        plik >> scores[i][0] >> scores[i][1] >> scores[i][2];
+        try {
+
+            tab[i] = stoi(scores[i][0]);
+        }
+        catch (std::exception& err) {
+            tab[i] = 0;
+        }
+    }
+    sort(tab, scores);
+    /*--- Zapis daty i godziny do stringa --*/
+    auto t = std::time(nullptr);
+    auto tm = *std::localtime(&t);
+
+    std::stringstream dateStream;
+    std::stringstream timeStream;
+    dateStream << std::put_time(&tm, "%d-%m-%Y");
+    timeStream << std::put_time(&tm, "%H:%M:%S");
+    std::string date = dateStream.str();
+    std::string time = timeStream.str();
+    /*----------------------------*/
+
+    if (points > tab[14]) {
+        tab[14] = points;
+        scores[14][0] = std::to_string(points);
+        scores[14][1] = date;
+        scores[14][2] = time;
+    }
+    sort(tab, scores);
+    plik.close();
+
+    plik.open("results.txt", std::ios::out);
+    for (int i = 0; i < 15; i++) {
+        plik << scores[i][0] << " " << scores[i][1] << " " << scores[i][2] << std::endl;
+    }
+    plik.close();
+}
+
+void sort(int tab[15], std::string s[15][3]) {
+    bool sorted = false;
+    while (!sorted) {
+        for (int i = 0; i < 14; i++) {
+            if (tab[i] < tab[i + 1]) {
+                std::swap(tab[i], tab[i + 1]);
+                std::swap(s[i][0], s[i + 1][0]);
+                std::swap(s[i][1], s[i + 1][1]);
+                std::swap(s[i][2], s[i + 1][2]);
+                sorted = false;
+                break;
+            }
+            else {
+                sorted = true;
+            }
+        }
+    }
+}
+
+void getResults(sf::Text scoresText[]) {
+    std::fstream plik;
+    std::string strings[15][3];
+
+    plik.open("results.txt", std::ios::in);
+
+    for (int i = 0; i < 15; i++) {
+        for (int j = 0; j < 3; j++) {
+            plik >> strings[i][j];
+        }
+        std::stringstream ss;
+        if (!strings[i][0].empty()) {
+            ss << std::setw(2) << i + 1 << ". " << std::setw(6) << strings[i][0] << " | " << strings[i][1] << " | " << strings[i][2];
+            scoresText[i].setString(ss.str());
+        }
+    }
+    plik.close();
 }
