@@ -15,7 +15,7 @@ const int WindowHeight = 720;
 
 /*Stany w których może być gra*/
 enum STATES { MAIN_MENU = 1, GAMEPLAY, GAME_OVER, OPTIONS, HOW_TO_PLAY, BEST_SCORES, PAUSE };
-char GAME_STATE = STATES::MAIN_MENU;
+char GAME_STATE = STATES::GAME_OVER;
 
 //Okreslenie kierunku
 /*
@@ -31,26 +31,33 @@ int size{ 2 };
 unsigned int score{ 0 };
 
 
-
-
 int speed = 120;
 const int step = 40;
+
+sf::Text scoreText;
 
 struct Point{
     int x = 20;
     int y = 100;
+    int dir{ 1 };
 }p[350];
 
-struct PointDir {
-    int dir{ 1 };
-}pd[350];
+void new_game(Player& player, Collectible& coll);
+
 
 int main(){
+    /*GENERAL SETUP*/
     sf::RenderWindow window{ sf::VideoMode(WindowWidth,WindowHeight), "Snake" , sf::Style::Titlebar | sf::Style::Close };
     window.setFramerateLimit(60);
 
-    Player player(WindowWidth/2, WindowHeight/2);
+    Player player(WindowWidth / 2, WindowHeight / 2);
     Collectible coll;
+
+    Button backToMenuButton(WindowWidth - 180, WindowHeight - 50);
+    backToMenuButton.setTextTexture("Graphics/backtomenutxt.png");
+
+    Button restartGameButton(180, WindowHeight - 50);
+    restartGameButton.setTextTexture("Graphics/resumetxt.png");
 
     //FONT
     sf::Font font;
@@ -92,7 +99,7 @@ int main(){
     }
     gameplayBackground.setTexture(gameplayBackgroundTexture);
 
-    sf::Text scoreText;
+    
     scoreText.setFont(font);
    // scoreText.setColor({ 86, 27, 174 });
     scoreText.setColor(sf::Color::White);
@@ -110,6 +117,23 @@ int main(){
     gameOverText.setOrigin({ 0,0 });
     gameOverText.setPosition({ WindowWidth/5, WindowHeight/2 });
     gameOverText.setString("GAME OVER");
+
+
+    /*OPTIONS SETUP*/
+    sf::Sprite optionsBackground;
+    sf::Texture optionsBackgroundTexture;
+    if (!optionsBackgroundTexture.loadFromFile("Graphics/options.png")) {
+        std::cout << "Error: Texture not found" << std::endl;
+    }
+    optionsBackground.setTexture(optionsBackgroundTexture);
+
+    /*BEST SCORES SETUP*/
+    sf::Sprite bestScoresBackground;
+    sf::Texture bestScoresBackgroundTexture;
+    if (!bestScoresBackgroundTexture.loadFromFile("Graphics/bestscores.png")) {
+        std::cout << "Error: Texture not found" << std::endl;
+    }
+    bestScoresBackground.setTexture(bestScoresBackgroundTexture);
 
     while (window.isOpen())
     {
@@ -142,6 +166,7 @@ int main(){
             /*-----MAIN MENU-----*/
 
             if (startGameButton.isPressed(window)) {
+                new_game(player, coll);
                 GAME_STATE = STATES::GAMEPLAY;
             }
             else if (optionsButton.isPressed(window)) {
@@ -174,10 +199,11 @@ int main(){
                 GAME_STATE = STATES::PAUSE;
             }
 
+
             for (int i = size; i > 0; i--) {
                 p[i].x = p[i - 1].x;
                 p[i].y = p[i - 1].y;   
-                pd[i].dir = pd[i-1].dir;
+                p[i].dir = p[i-1].dir;
                 //std::cout << pd[i].dir << std::endl;
             }
            /* std::cout << "---" << std::endl;
@@ -203,7 +229,7 @@ int main(){
                 else p[0].x += WindowWidth - step;
             }
 
-            pd[0].dir = dir;
+            p[0].dir = dir;
             
             /* if (p[size - 1].x < p[size - 2].x) last_segment_dir = 1;
              else if (p[size - 1].x > p[size - 2].x) last_segment_dir = 3;
@@ -225,7 +251,7 @@ int main(){
             for (int i = size - 1; i >= 0; i--) {
                 /*if (i == size - 1) player.setTexture(i, last_segment_dir, size - 1);
                 else player.setTexture(i, dir, size-1);*/
-                player.setTexture(i, pd[i].dir, size - 1);
+                player.setTexture(i, p[i].dir, size - 1);
                 player.setPosition(p[i].x, p[i].y);
                 window.draw(player);
             }                
@@ -249,16 +275,20 @@ int main(){
                   
         case GAME_OVER:
             /*-----GAME OVER-----*/
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::R)) {
-                GAME_STATE = STATES::GAMEPLAY;
+            if (restartGameButton.isPressed(window)) {
+                new_game(player, coll);
+            }
+            if (backToMenuButton.isPressed(window)) {
+                GAME_STATE = STATES::MAIN_MENU;
             }
 
             window.draw(gameplayBackground);
+            window.draw(restartGameButton);
+            window.draw(backToMenuButton);
             for (int i = size-1; i >=0; i--) {
                 /*if(i==size-1) player.setTexture(i, last_segment_dir, size - 1);
                 else player.setTexture(i, dir,size-1);*/
-                player.setTexture(i, pd[i].dir, size - 1);
-                player.setColor(sf::Color::Red);
+                player.setTexture(i, p[i].dir, size - 1);               
                 player.setPosition(p[i].x, p[i].y);
                 window.draw(player);
             }
@@ -267,10 +297,24 @@ int main(){
             window.display();
             /*-----/GAME OVER-----*/
             break;
-
+            /*-----OPTIONS--------*/
+        case OPTIONS:
+            if (backToMenuButton.isPressed(window)) {
+                GAME_STATE = STATES::MAIN_MENU;
+            }
+            window.draw(optionsBackground);
+            window.draw(backToMenuButton);
+            window.display();
+            break;
+            /*-----/OPTIONS-------*/
         case BEST_SCORES:
             /*------BEST SCORES-----*/
-           
+            if (backToMenuButton.isPressed(window)) {
+                GAME_STATE = STATES::MAIN_MENU;
+            }
+            window.draw(bestScoresBackground);
+            window.draw(backToMenuButton);
+            window.display();
             /*------/BEST SCORES-----*/
             break;
 
@@ -288,45 +332,24 @@ int main(){
             /*------/PAUSE-----*/
             break;
         }
-
-
-      /* for (int i = size; i > 0; i--) {
-            p[i].x = p[i - 1].x;
-            p[i].y = p[i - 1].y;
-        }
-
-        if (dir == 0) {
-            if (p[0].y > 0) p[0].y -= step;            
-            else p[0].y += WindowHeight-step;                
-        }
-           
-        if (dir == 1) {
-            if (p[0].y < WindowHeight - step) p[0].y += step;
-            else p[0].y -= WindowHeight - step ;
-        } 
-        if (dir == 2) {
-            if (p[0].x < WindowWidth - step ) p[0].x += step;
-            else p[0].x -= WindowWidth - step;
-        }
-        if (dir == 3) {
-            if (p[0].x > 0) p[0].x -= step;
-            else p[0].x += WindowWidth - step;
-        }
-            
-
-        if (p[0].x == coll.getPosition().x && p[0].y == coll.getPosition().y) {
-            size++;
-            coll.randomPosition();
-        }
-
-        for (int i = 0; i < size; i++) {
-            player.setPosition(p[i].x, p[i].y);
-            window.draw(player);
-        }*/
-        //window.draw(coll);
-      
-        
-        //can_change_dir = true;
     }
     return 0;
+}
+
+
+void new_game(Player& player, Collectible& coll){
+    score = 0;
+    scoreText.setString("Score: " + std::to_string(score));
+    p[0].x = 20;
+    p[0].y = 100;
+    dir = 1;
+    coll.randomPosition();
+    for (int i = 1; i < size; i++) {
+        p[i].x = 0;
+        p[i].y = 0;
+        p[i].dir = 1;
+    }
+    player.setPosition(p[0].x, p[0].y);
+    size = 2;
+    GAME_STATE = STATES::GAMEPLAY;
 }
