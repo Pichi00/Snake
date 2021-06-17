@@ -6,8 +6,6 @@
 #include <windows.h> 
 #include <sstream>
 #include <fstream>
-#include <cstdio>
-#include <ctime>
 
 //Klasy
 #include "Player.h"
@@ -37,8 +35,12 @@ int size{ 2 };
 unsigned int score{ 0 };
 unsigned int bestScore{ 0 };
 
+const int BASE_SPEED = 120;
+const int SLOW_SPEED = 180;
+const int FAST_SPEED = 90;
+const int BUFF_DURATION = 25;
 
-int speed = 120;
+int speed = BASE_SPEED;
 const int step = 40;
 
 sf::Text scoreText;
@@ -51,7 +53,7 @@ struct Point{
     int dir{ 1 };
 }p[350];
 
-void new_game(Player& player, Collectible& coll);
+void new_game(Player& player, Collectible& coll, Collectible& slowB, Collectible& fastB);
 void saveResult(unsigned int points);
 void getResults(sf::Text scoresText[]);
 
@@ -108,6 +110,10 @@ int main(){
     MainMenu.setTexture(MainMenuBackground);
 
     /*GAMEPLAY SETUP*/
+    int stepsCounter{ 0 };
+    bool stepsCounterEnable = false;
+    int scoreMultiplier = 1;
+    int buffDuration{ 0 };
     sf::Sprite gameplayBackground;
     sf::Texture gameplayBackgroundTexture;
     if (!gameplayBackgroundTexture.loadFromFile("Graphics/background.png")) {
@@ -196,7 +202,7 @@ int main(){
             /*-----MAIN MENU-----*/
 
             if (startGameButton.isPressed(window)) {
-                new_game(player, coll);
+                new_game(player, coll, slowB, fastB);
                 GAME_STATE = STATES::GAMEPLAY;
             }
             else if (optionsButton.isPressed(window)) {
@@ -226,9 +232,9 @@ int main(){
 
         case GAMEPLAY:
             /*-----GAMEPLAY-----*/
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
+           /* if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
                 GAME_STATE = STATES::PAUSE;
-            }
+            }*/
 
 
             for (int i = size; i > 0; i--) {
@@ -265,17 +271,33 @@ int main(){
 
             if (p[0].x == coll.getPosition().x && p[0].y == coll.getPosition().y) {
                 size++;
-                score += 10;
+                score += 10 * scoreMultiplier;
                 scoreText.setString("Score: " + std::to_string(score));
                 bool bad = true;
                 
                 while (bad) {                                        
                     coll.randomPosition();
-                    if (size % 2 == 0)   slowB.randomPosition();
-                    else slowB.setPosition(-100, -100);
+                    if ((rand()%5) == 0) {
+                        if (rand() % 2 == 0) {
+                            slowB.randomPosition();
+                        }
+                        else {
+                            fastB.randomPosition();
+                        }                       
+                    }
+                    else {
+                        slowB.setPosition(-100, -100);
+                        fastB.setPosition(-101, -101);
+                    }
                     for (int i = 0; i < size; i++) {
-                        if (coll.getPosition().x == p[i].x && coll.getPosition().y == p[i].y) {
+                        if ((coll.getPosition().x == p[i].x && coll.getPosition().y == p[i].y)      ||
+                            (slowB.getPosition().x == p[i].x && slowB.getPosition().y == p[i].y)    ||
+                            (fastB.getPosition().x == p[i].x && fastB.getPosition().y == p[i].y)    ||
+                            (slowB.getPosition().x == coll.getPosition().x && slowB.getPosition().y == coll.getPosition().y) ||
+                            (fastB.getPosition().x == coll.getPosition().x && fastB.getPosition().y == coll.getPosition().y)) {
+
                             bad = true;
+                            std::cout << "BAD" << std::endl;
                             break;
                         }
                         else bad = false;
@@ -285,10 +307,20 @@ int main(){
             }
 
             if (p[0].x == slowB.getPosition().x && p[0].y == slowB.getPosition().y) {
-                speed += 50;
                 slowB.setPosition(-100,-100);
+                score = score / 2;
+                scoreText.setString("Score: " + std::to_string(score));
+                speed = SLOW_SPEED;
+                buffDuration = 25;
+                stepsCounterEnable = true;
             }
-
+            else if (p[0].x == fastB.getPosition().x && p[0].y == fastB.getPosition().y) {
+                fastB.setPosition(-101, -101);
+                scoreMultiplier = 5;
+                speed = FAST_SPEED;
+                buffDuration = 50;
+                stepsCounterEnable = true;
+            }
 
                 window.draw(gameplayBackground);
             for (int i = size - 1; i >= 0; i--) {
@@ -305,6 +337,17 @@ int main(){
                 window.draw(bestScoreText);
                 can_change_dir = true;
                 window.display();
+                if (stepsCounterEnable) {
+                    stepsCounter++;
+                    if (stepsCounter > buffDuration) {
+                        stepsCounter = 0;
+                        stepsCounterEnable = false;
+                        speed = BASE_SPEED;
+                        scoreMultiplier = 1;
+                    }
+                    std::cout << stepsCounter << std::endl;
+                }
+                
                 Sleep(speed);
 
                 /*Warunek sprawdzający czy głowa węża nie napotkała jakiegoś jego segmentu*/
@@ -323,7 +366,7 @@ int main(){
         case GAME_OVER:
             /*-----GAME OVER-----*/
             if (restartGameButton.isPressed(window)) {
-                new_game(player, coll);
+                new_game(player, coll, slowB, fastB);
             }
             if (backToMenuButton.isPressed(window)) {
                 GAME_STATE = STATES::MAIN_MENU;
@@ -390,19 +433,22 @@ int main(){
 }
 
 
-void new_game(Player& player, Collectible& coll){
+void new_game(Player& player, Collectible& coll, Collectible& slowB, Collectible& fastB){
     score = 0;
     scoreText.setString("Score: " + std::to_string(score));
     p[0].x = 20;
     p[0].y = 100;
     dir = 1;
     coll.randomPosition();
+    slowB.setPosition(-100, -100);
+    fastB.setPosition(-101, -101);
     for (int i = 1; i < size; i++) {
         p[i].x = 0;
         p[i].y = 0;
         p[i].dir = 1;
     }
     player.setPosition(p[0].x, p[0].y);
+
     size = 2;
     getResults(scoresText);
     GAME_STATE = STATES::GAMEPLAY;
