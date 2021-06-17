@@ -6,10 +6,13 @@
 #include <windows.h> 
 #include <sstream>
 #include <fstream>
+#include <cstdio>
+#include <ctime>
 
 //Klasy
 #include "Player.h"
 #include "Collectible.h"
+#include "SlowBonus.h"
 #include "Button.h"
 
 /*Wymiary okna*/
@@ -18,7 +21,7 @@ const int WindowHeight = 720;
 
 /*Stany w których może być gra*/
 enum STATES { MAIN_MENU = 1, GAMEPLAY, GAME_OVER, OPTIONS, HOW_TO_PLAY, BEST_SCORES, PAUSE };
-char GAME_STATE = STATES::GAME_OVER;
+char GAME_STATE = STATES::MAIN_MENU;
 
 //Okreslenie kierunku
 /*
@@ -32,12 +35,15 @@ char last_segment_dir{ 1 };
 bool can_change_dir = true;
 int size{ 2 };
 unsigned int score{ 0 };
+unsigned int bestScore{ 0 };
 
 
 int speed = 120;
 const int step = 40;
 
 sf::Text scoreText;
+sf::Text bestScoreText;
+sf::Text scoresText[15];
 
 struct Point{
     int x = 20;
@@ -54,11 +60,14 @@ void sort(int tab[15], std::string s[15][3]);
 
 int main(){
     /*GENERAL SETUP*/
+    srand(time(NULL));
     sf::RenderWindow window{ sf::VideoMode(WindowWidth,WindowHeight), "Snake" , sf::Style::Titlebar | sf::Style::Close };
     window.setFramerateLimit(60);
 
     Player player(WindowWidth / 2, WindowHeight / 2);
-    Collectible coll;
+    Collectible coll("Graphics/collectible.png");
+    Collectible slowB("Graphics/slow.png");
+    Collectible fastB("Graphics/fast.png");
 
     Button backToMenuButton(WindowWidth - 180, WindowHeight - 50);
     backToMenuButton.setTextTexture("Graphics/backtomenutxt.png");
@@ -108,12 +117,18 @@ int main(){
 
     
     scoreText.setFont(font);
-   // scoreText.setColor({ 86, 27, 174 });
     scoreText.setColor(sf::Color::White);
     scoreText.setCharacterSize(18);
     scoreText.setOrigin({ 0,0 });
-    scoreText.setPosition({ 20, 20 });
-    scoreText.setString("Score: "+std::to_string(score));
+    scoreText.setPosition({ 20, 5 });
+    scoreText.setString("Score: " + std::to_string(score));
+
+    bestScoreText.setFont(font);
+    bestScoreText.setColor(sf::Color::White);
+    bestScoreText.setCharacterSize(18);
+    bestScoreText.setOrigin({ 0,0 });
+    bestScoreText.setPosition({ 20, 35 });
+    //bestScoreText.setString("Best Score: " + std::to_string(score));
 
     /*GAME OVER SETUP*/
     sf::Text gameOverText;
@@ -141,7 +156,7 @@ int main(){
         std::cout << "Error: Texture not found" << std::endl;
     }
     bestScoresBackground.setTexture(bestScoresBackgroundTexture);
-    sf::Text scoresText[15];
+    
     for (int i = 0; i < 15; i++) {
         scoresText[i].setFont(font);
         scoresText[i].setFillColor(sf::Color::White);
@@ -252,8 +267,26 @@ int main(){
                 size++;
                 score += 10;
                 scoreText.setString("Score: " + std::to_string(score));
+                bool bad = true;
                 
-                coll.randomPosition();
+                while (bad) {                                        
+                    coll.randomPosition();
+                    if (size % 2 == 0)   slowB.randomPosition();
+                    else slowB.setPosition(-100, -100);
+                    for (int i = 0; i < size; i++) {
+                        if (coll.getPosition().x == p[i].x && coll.getPosition().y == p[i].y) {
+                            bad = true;
+                            break;
+                        }
+                        else bad = false;
+                    }                    
+                }
+
+            }
+
+            if (p[0].x == slowB.getPosition().x && p[0].y == slowB.getPosition().y) {
+                speed += 50;
+                slowB.setPosition(-100,-100);
             }
 
 
@@ -266,7 +299,10 @@ int main(){
                 window.draw(player);
             }                
                 window.draw(coll);
+                window.draw(slowB);
+                window.draw(fastB);
                 window.draw(scoreText);
+                window.draw(bestScoreText);
                 can_change_dir = true;
                 window.display();
                 Sleep(speed);
@@ -306,6 +342,7 @@ int main(){
             window.draw(backToMenuButton);
             window.draw(gameOverText);
             window.draw(scoreText);
+            window.draw(bestScoreText);
             window.display();
             /*-----/GAME OVER-----*/
             break;
@@ -367,6 +404,7 @@ void new_game(Player& player, Collectible& coll){
     }
     player.setPosition(p[0].x, p[0].y);
     size = 2;
+    getResults(scoresText);
     GAME_STATE = STATES::GAMEPLAY;
 }
 
@@ -439,7 +477,7 @@ void getResults(sf::Text scoresText[]) {
     std::string strings[15][3];
 
     plik.open("results.txt", std::ios::in);
-
+    std::cout << strings[0][0] << std::endl;
     for (int i = 0; i < 15; i++) {
         for (int j = 0; j < 3; j++) {
             plik >> strings[i][j];
@@ -449,6 +487,8 @@ void getResults(sf::Text scoresText[]) {
             ss << std::setw(2) << i + 1 << ". " << std::setw(6) << strings[i][0] << " | " << strings[i][1] << " | " << strings[i][2];
             scoresText[i].setString(ss.str());
         }
+        
     }
+    bestScoreText.setString("Best Score: " + strings[0][0]);
     plik.close();
 }

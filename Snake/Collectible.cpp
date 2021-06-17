@@ -1,11 +1,9 @@
 #include "Collectible.h"
 
-const std::string collTexturePath = "Graphics/collectible.png";
 
-Collectible::Collectible() {
-	srand(time(NULL));
-	if (!collTexture.loadFromFile(collTexturePath)) {
-		std::cout << "Blad ladowania tekstury gracza. Upewnij sie, ze posiadasz plik \"" << collTexturePath << "\"" << std::endl;
+Collectible::Collectible(std::string texture) {	
+	if (!collTexture.loadFromFile(texture)) {
+		std::cout << "Blad ladowania tekstury gracza. Upewnij sie, ze posiadasz plik \"" << texture << "\"" << std::endl;
 	}
 	collSprite.setTexture(collTexture);
 	collSprite.setOrigin(collWidth / 2, collHeight / 2);
@@ -21,7 +19,6 @@ sf::Vector2f Collectible::getPosition() {
 }
 
 void Collectible::randomPosition() {
-	srand(time(NULL));
 	float randX = 40.f * float(rand() % 18) + collWidth/2;
 	float randY = 40.f * float(rand() % 16 + 2) + collHeight/2;
 	//std::cout << randX << std::endl << randY << std::endl;
