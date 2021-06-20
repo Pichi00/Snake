@@ -1,6 +1,8 @@
 ﻿#pragma warning(disable : 4996) 
 //Biblioteki
 #include <SFML/Graphics.hpp>
+#include <SFML/Window.hpp>
+#include <SFML/Audio.hpp>
 #include <iostream>
 #include <iomanip>
 #include <windows.h> 
@@ -18,7 +20,7 @@ const int WindowWidth = 720;
 const int WindowHeight = 720;
 
 /*Stany w których może być gra*/
-enum STATES { MAIN_MENU = 1, GAMEPLAY, GAME_OVER, OPTIONS, HOW_TO_PLAY, BEST_SCORES, PAUSE };
+enum STATES { MAIN_MENU = 1, GAMEPLAY, GAME_OVER, HOW_TO_PLAY, BEST_SCORES, PAUSE };
 char GAME_STATE = STATES::MAIN_MENU;
 
 //Okreslenie kierunku
@@ -39,6 +41,7 @@ const int BASE_SPEED = 120;
 const int SLOW_SPEED = 180;
 const int FAST_SPEED = 90;
 const int BUFF_DURATION = 25;
+const int VOLUME = 20;
 
 int speed = BASE_SPEED;
 const int step = 40;
@@ -88,19 +91,16 @@ int main(){
 
     Button startGameButton(WindowWidth/2, 273);
     startGameButton.setTextTexture("Graphics/grajtxt.png");
-    Button optionsButton(WindowWidth / 2, 353);
-    optionsButton.setTextTexture("Graphics/optionstxt.png");
-    Button bestScoresButton(WindowWidth / 2, 433);
+    Button bestScoresButton(WindowWidth / 2, 353);
     bestScoresButton.setTextTexture("Graphics/bestscorestxt.png");
-    Button howToButton(WindowWidth / 2, 513);
+    Button howToButton(WindowWidth / 2, 433);
     howToButton.setTextTexture("Graphics/howtotxt.png");
-    Button exitGameButton(WindowWidth / 2, 593);
+    Button exitGameButton(WindowWidth / 2, 513);
     exitGameButton.setTextTexture("Graphics/wyjdztxt.png");
 
     authorText.setFont(font);
     authorText.setColor(sf::Color::White);
     authorText.setCharacterSize(14);
-    //authorText.setOrigin({ 170,20 });
     authorText.setPosition({ 10, WindowHeight - 25 });
     authorText.setString("Authors: Piotr Kolodziejski & Wiktor Machon");
 
@@ -114,12 +114,67 @@ int main(){
     bool stepsCounterEnable = false;
     int scoreMultiplier = 1;
     int buffDuration{ 0 };
+    int buffDelay = rand() % 5 + 3;
+
+
     sf::Sprite gameplayBackground;
     sf::Texture gameplayBackgroundTexture;
     if (!gameplayBackgroundTexture.loadFromFile("Graphics/background.png")) {
         std::cout << "Error: Texture not found" << std::endl;
     }
     gameplayBackground.setTexture(gameplayBackgroundTexture);
+
+    sf::Sprite slowIcon;
+    sf::Texture slowIconTexture;
+    if (!slowIconTexture.loadFromFile("Graphics/minuspol.png")) {
+        std::cout << "Error: Texture not found" << std::endl;
+    }
+    slowIcon.setTexture(slowIconTexture);
+    slowIcon.setPosition(WindowWidth - 70, 10);
+    slowIcon.setScale(1.5, 1.5);
+
+    sf::Sprite speedIcon;
+    sf::Texture speedIconTexture;
+    if (!speedIconTexture.loadFromFile("Graphics/x2.png")) {
+        std::cout << "Error: Texture not found" << std::endl;
+    }
+    speedIcon.setTexture(speedIconTexture);
+    speedIcon.setScale(1.5,1.5);
+    speedIcon.setPosition(WindowWidth - 70, 10);
+
+    /*  Sounds */
+    sf::SoundBuffer collectBuffer;
+    sf::Sound collectSound;
+    if (!collectBuffer.loadFromFile("Sounds/collect.wav")) {
+        std::cout << "Error." << std::endl;
+    }
+    collectSound.setBuffer(collectBuffer);
+    collectSound.setVolume(VOLUME);
+
+    sf::SoundBuffer slowBuffer;
+    sf::Sound slowSound;
+    if (!slowBuffer.loadFromFile("Sounds/slow.wav")) {
+        std::cout << "Error." << std::endl;
+    }
+    slowSound.setBuffer(slowBuffer);
+    slowSound.setVolume(VOLUME);
+
+    sf::SoundBuffer speedBuffer;
+    sf::Sound speedSound;
+    if (!speedBuffer.loadFromFile("Sounds/speedup.wav")) {
+        std::cout << "Error." << std::endl;
+    }
+    speedSound.setBuffer(speedBuffer);
+    speedSound.setVolume(VOLUME);
+    
+
+    sf::SoundBuffer gameOverBuffer;
+    sf::Sound gameOverSound;
+    if (!gameOverBuffer.loadFromFile("Sounds/gameover.wav")) {
+        std::cout << "Error." << std::endl;
+    }
+    gameOverSound.setBuffer(gameOverBuffer);
+    gameOverSound.setVolume(VOLUME);
 
     
     scoreText.setFont(font);
@@ -134,12 +189,10 @@ int main(){
     bestScoreText.setCharacterSize(18);
     bestScoreText.setOrigin({ 0,0 });
     bestScoreText.setPosition({ 20, 35 });
-    //bestScoreText.setString("Best Score: " + std::to_string(score));
 
     /*GAME OVER SETUP*/
     sf::Text gameOverText;
     gameOverText.setFont(font);
-    //gameOverText.setColor({ 86, 27, 174 });
     gameOverText.setColor(sf::Color::White);
     gameOverText.setCharacterSize(48);
     gameOverText.setOrigin({ 0,0 });
@@ -147,13 +200,13 @@ int main(){
     gameOverText.setString("GAME OVER");
 
 
-    /*OPTIONS SETUP*/
-    sf::Sprite optionsBackground;
-    sf::Texture optionsBackgroundTexture;
-    if (!optionsBackgroundTexture.loadFromFile("Graphics/options.png")) {
+    /*HOW TO PLAY SETUP*/
+    sf::Sprite howToBackground;
+    sf::Texture howToBackgroundTexture;
+    if (!howToBackgroundTexture.loadFromFile("Graphics/howtoplay.png")) {
         std::cout << "Error: Texture not found" << std::endl;
     }
-    optionsBackground.setTexture(optionsBackgroundTexture);
+    howToBackground.setTexture(howToBackgroundTexture);
 
     /*BEST SCORES SETUP*/
     sf::Sprite bestScoresBackground;
@@ -205,9 +258,6 @@ int main(){
                 new_game(player, coll, slowB, fastB);
                 GAME_STATE = STATES::GAMEPLAY;
             }
-            else if (optionsButton.isPressed(window)) {
-                GAME_STATE = STATES::OPTIONS;
-            }
             else if (bestScoresButton.isPressed(window)) {
                 getResults(scoresText);
                 GAME_STATE = STATES::BEST_SCORES;
@@ -222,7 +272,6 @@ int main(){
             window.draw(MainMenu);
             window.draw(authorText);
             window.draw(startGameButton);
-            window.draw(optionsButton);
             window.draw(bestScoresButton);
             window.draw(howToButton);
             window.draw(exitGameButton);
@@ -231,23 +280,13 @@ int main(){
             break;
 
         case GAMEPLAY:
-            /*-----GAMEPLAY-----*/
-           /* if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
-                GAME_STATE = STATES::PAUSE;
-            }*/
-
-
+            /*-----GAMEPLAY-----*/      
             for (int i = size; i > 0; i--) {
                 p[i].x = p[i - 1].x;
                 p[i].y = p[i - 1].y;   
                 p[i].dir = p[i-1].dir;
-                //std::cout << pd[i].dir << std::endl;
             }
-           /* std::cout << "---" << std::endl;
-            Sleep(200);*/
-
-            
-
+          
             if (dir == 0) {
                 if (p[0].y > 100) p[0].y -= step;
                 else p[0].y += WindowHeight - (step+80);
@@ -273,17 +312,22 @@ int main(){
                 size++;
                 score += 10 * scoreMultiplier;
                 scoreText.setString("Score: " + std::to_string(score));
+                collectSound.play();
+                slowB.setPosition(-100, -100);
+                fastB.setPosition(-101, -101);
                 bool bad = true;
                 
                 while (bad) {                                        
                     coll.randomPosition();
-                    if ((rand()%5) == 0) {
+                    
+                    if (size%buffDelay == 0) {
                         if (rand() % 2 == 0) {
                             slowB.randomPosition();
                         }
                         else {
                             fastB.randomPosition();
-                        }                       
+                        }
+                        buffDelay = rand() % 5 + 2;
                     }
                     else {
                         slowB.setPosition(-100, -100);
@@ -297,7 +341,6 @@ int main(){
                             (fastB.getPosition().x == coll.getPosition().x && fastB.getPosition().y == coll.getPosition().y)) {
 
                             bad = true;
-                            std::cout << "BAD" << std::endl;
                             break;
                         }
                         else bad = false;
@@ -312,6 +355,8 @@ int main(){
                 scoreText.setString("Score: " + std::to_string(score));
                 speed = SLOW_SPEED;
                 buffDuration = 25;
+                stepsCounter = 0;
+                slowSound.play();
                 stepsCounterEnable = true;
             }
             else if (p[0].x == fastB.getPosition().x && p[0].y == fastB.getPosition().y) {
@@ -319,13 +364,13 @@ int main(){
                 scoreMultiplier = 5;
                 speed = FAST_SPEED;
                 buffDuration = 50;
+                stepsCounter = 0;
+                speedSound.play();
                 stepsCounterEnable = true;
             }
 
                 window.draw(gameplayBackground);
             for (int i = size - 1; i >= 0; i--) {
-                /*if (i == size - 1) player.setTexture(i, last_segment_dir, size - 1);
-                else player.setTexture(i, dir, size-1);*/
                 player.setTexture(i, p[i].dir, size - 1);
                 player.setPosition(p[i].x, p[i].y);
                 window.draw(player);
@@ -335,6 +380,8 @@ int main(){
                 window.draw(fastB);
                 window.draw(scoreText);
                 window.draw(bestScoreText);
+                if (speed == SLOW_SPEED) window.draw(slowIcon);
+                else if (speed == FAST_SPEED) window.draw(speedIcon);
                 can_change_dir = true;
                 window.display();
                 if (stepsCounterEnable) {
@@ -345,7 +392,6 @@ int main(){
                         speed = BASE_SPEED;
                         scoreMultiplier = 1;
                     }
-                    std::cout << stepsCounter << std::endl;
                 }
                 
                 Sleep(speed);
@@ -356,6 +402,7 @@ int main(){
                         if (p[0].x == p[i].x && p[0].y == p[i].y) {
                             window.clear();
                             saveResult(score);
+                            gameOverSound.play();
                             GAME_STATE = STATES::GAME_OVER;
                         }
                     }
@@ -375,8 +422,6 @@ int main(){
             window.draw(gameplayBackground);
             
             for (int i = size-1; i >=0; i--) {
-                /*if(i==size-1) player.setTexture(i, last_segment_dir, size - 1);
-                else player.setTexture(i, dir,size-1);*/
                 player.setTexture(i, p[i].dir, size - 1);               
                 player.setPosition(p[i].x, p[i].y);
                 window.draw(player);
@@ -386,19 +431,10 @@ int main(){
             window.draw(gameOverText);
             window.draw(scoreText);
             window.draw(bestScoreText);
+            
             window.display();
             /*-----/GAME OVER-----*/
-            break;
-            /*-----OPTIONS--------*/
-        case OPTIONS:
-            if (backToMenuButton.isPressed(window)) {
-                GAME_STATE = STATES::MAIN_MENU;
-            }
-            window.draw(optionsBackground);
-            window.draw(backToMenuButton);
-            window.display();
-            break;
-            /*-----/OPTIONS-------*/
+            break;            
         case BEST_SCORES:
             /*------BEST SCORES-----*/
             if (backToMenuButton.isPressed(window)) {
@@ -416,7 +452,13 @@ int main(){
 
             /*------HOW TO PLAY-----*/
         case HOW_TO_PLAY:
-            
+            if (backToMenuButton.isPressed(window)) {
+                GAME_STATE = STATES::MAIN_MENU;
+            }
+
+            window.draw(howToBackground);
+            window.draw(backToMenuButton);
+            window.display();
             /*------/HOW TO PLAY-----*/
             break;
 
@@ -435,6 +477,7 @@ int main(){
 
 void new_game(Player& player, Collectible& coll, Collectible& slowB, Collectible& fastB){
     score = 0;
+    speed = BASE_SPEED;
     scoreText.setString("Score: " + std::to_string(score));
     p[0].x = 20;
     p[0].y = 100;
