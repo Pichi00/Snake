@@ -20,7 +20,7 @@ const int WindowWidth = 720;
 const int WindowHeight = 720;
 
 /*Stany w których może być gra*/
-enum STATES { MAIN_MENU = 1, GAMEPLAY, GAME_OVER, HOW_TO_PLAY, BEST_SCORES, PAUSE };
+enum STATES { MAIN_MENU = 1, GAMEPLAY, GAME_OVER, HOW_TO_PLAY, BEST_SCORES};
 char GAME_STATE = STATES::MAIN_MENU;
 
 //Okreslenie kierunku
@@ -30,49 +30,54 @@ char GAME_STATE = STATES::MAIN_MENU;
     2 - dol
     3 - lewo
 */
-char dir{ 1 }; 
-char last_segment_dir{ 1 };
-bool can_change_dir = true;
-int size{ 2 };
-unsigned int score{ 0 };
-unsigned int bestScore{ 0 };
 
-const int BASE_SPEED = 120;
-const int SLOW_SPEED = 180;
-const int FAST_SPEED = 90;
-const int BUFF_DURATION = 25;
-const int VOLUME = 20;
+char dir{ 1 };                  //Kierunek w którym porusza się wąż
+bool can_change_dir = true;     //Zmienna pomocnicza określająca czy wąż może zmienić kierunek
+int size{ 2 };                  //Ilość segmentów węża
+unsigned int score{ 0 };        //Wynik
 
-int speed = BASE_SPEED;
-const int step = 40;
+/*Stałe wartości*/
+const int BASE_SPEED = 120;     //Zwyczajna prędkość węża
+const int SLOW_SPEED = 180;     //Prędkość gdy wąż jest przyspieszony
+const int FAST_SPEED = 90;      //Prędkość gdy wąż jest spowolniony
+const int VOLUME = 20;          //Głośność efektów dźwiękowych
+const int STEP = 40;            //Rozmiar kroku węża
 
+int speed = BASE_SPEED;         //Prędkość węża
+
+/*Zmienne klasy sf::Text związane z wynikiem gracza*/
 sf::Text scoreText;
 sf::Text bestScoreText;
 sf::Text scoresText[15];
 
+/*Struktura odpowiedzialna za współrzędne kolejnych segmentów gracza oraz kierunki poszczególnych segmentów
+Punkt p[0] to głowa węża a p[size - 1] to ogon węża*/
 struct Point{
     int x = 20;
     int y = 100;
     int dir{ 1 };
 }p[350];
 
+/*Funkcja ustawiająca grę na stan początkowy*/
 void new_game(Player& player, Collectible& coll, Collectible& slowB, Collectible& fastB);
+
+/*Funkcje do zapisu, odczytu i sortowania najlepszych wyników*/
 void saveResult(unsigned int points);
 void getResults(sf::Text scoresText[]);
-
 void sort(int tab[15], std::string s[15][3]);
 
 
 int main(){
+    /*---------CZĘŚĆ SETUP--------*/
     /*GENERAL SETUP*/
     srand(time(NULL));
     sf::RenderWindow window{ sf::VideoMode(WindowWidth,WindowHeight), "Snake" , sf::Style::Titlebar | sf::Style::Close };
     window.setFramerateLimit(60);
 
-    Player player(WindowWidth / 2, WindowHeight / 2);
-    Collectible coll("Graphics/collectible.png");
-    Collectible slowB("Graphics/slow.png");
-    Collectible fastB("Graphics/fast.png");
+    Player player(WindowWidth / 2, WindowHeight / 2);   //Gracz
+    Collectible coll("Graphics/collectible.png");       //Czerwona jabłko
+    Collectible slowB("Graphics/slow.png");             //Zielone jabłko
+    Collectible fastB("Graphics/fast.png");             //Złote jabłko
 
     Button backToMenuButton(WindowWidth - 180, WindowHeight - 50);
     backToMenuButton.setTextTexture("Graphics/backtomenutxt.png");
@@ -114,7 +119,7 @@ int main(){
     bool stepsCounterEnable = false;
     int scoreMultiplier = 1;
     int buffDuration{ 0 };
-    int buffDelay = rand() % 5 + 3;
+    int randomBuff = rand();
 
 
     sf::Sprite gameplayBackground;
@@ -130,17 +135,17 @@ int main(){
         std::cout << "Error: Texture not found" << std::endl;
     }
     slowIcon.setTexture(slowIconTexture);
-    slowIcon.setPosition(WindowWidth - 70, 10);
+    slowIcon.setPosition(WindowWidth - 70, 5);
     slowIcon.setScale(1.5, 1.5);
 
     sf::Sprite speedIcon;
     sf::Texture speedIconTexture;
-    if (!speedIconTexture.loadFromFile("Graphics/x2.png")) {
+    if (!speedIconTexture.loadFromFile("Graphics/x5.png")) {
         std::cout << "Error: Texture not found" << std::endl;
     }
     speedIcon.setTexture(speedIconTexture);
     speedIcon.setScale(1.5,1.5);
-    speedIcon.setPosition(WindowWidth - 70, 10);
+    speedIcon.setPosition(WindowWidth - 70, 5);
 
     /*  Sounds */
     sf::SoundBuffer collectBuffer;
@@ -214,23 +219,23 @@ int main(){
     if (!bestScoresBackgroundTexture.loadFromFile("Graphics/bestscores.png")) {
         std::cout << "Error: Texture not found" << std::endl;
     }
-    bestScoresBackground.setTexture(bestScoresBackgroundTexture);
-    
+    bestScoresBackground.setTexture(bestScoresBackgroundTexture);    
     for (int i = 0; i < 15; i++) {
         scoresText[i].setFont(font);
         scoresText[i].setFillColor(sf::Color::White);
         scoresText[i].setPosition({ 50,150 + 30 * static_cast<float>(i) });
         scoresText[i].setCharacterSize(16);
     }
+    /*----KONIEC CZĘŚCI SETUP----*/
 
-
+    /*---------CZĘŚĆ LOOP--------*/
     while (window.isOpen())
     {
         window.clear();
         sf::Event event;
         while (window.pollEvent(event)){
             if (event.type == sf::Event::Closed) window.close();
-
+            /*Określenie przez gracza kierunku w którym ma poruszać się wąż*/
             if (event.type == sf::Event::KeyPressed && can_change_dir) {
                 if ((event.key.code == sf::Keyboard::W || event.key.code == sf::Keyboard::Up) && dir != 2) {
                     dir = 0;
@@ -280,34 +285,36 @@ int main(){
             break;
 
         case GAMEPLAY:
-            /*-----GAMEPLAY-----*/      
+            /*-----GAMEPLAY-----*/
+            /*Współrzędne i kierunek punktu są ustawiane jako właściwości punktu poprzedniego*/
             for (int i = size; i > 0; i--) {
                 p[i].x = p[i - 1].x;
                 p[i].y = p[i - 1].y;   
                 p[i].dir = p[i-1].dir;
             }
-          
-            if (dir == 0) {
-                if (p[0].y > 100) p[0].y -= step;
-                else p[0].y += WindowHeight - (step+80);
-            }
 
+            /*Określenie kierunku w którym wąż się porusza*/
+            if (dir == 0) {
+                if (p[0].y > 100) p[0].y -= STEP;
+                else p[0].y += WindowHeight - (STEP +80);
+            }
             if (dir == 2) {
-                if (p[0].y < WindowHeight - step) p[0].y += step;
-                else p[0].y -= WindowHeight - (step+80);
+                if (p[0].y < WindowHeight - STEP) p[0].y += STEP;
+                else p[0].y -= WindowHeight - (STEP +80);
             }
             if (dir == 1) {
-                if (p[0].x < WindowWidth - step) p[0].x += step;
-                else p[0].x -= WindowWidth - step;
+                if (p[0].x < WindowWidth - STEP) p[0].x += STEP;
+                else p[0].x -= WindowWidth - STEP;
             }
             if (dir == 3) {
-                if (p[0].x > 20) p[0].x -= step;
-                else p[0].x += WindowWidth - step;
+                if (p[0].x > 20) p[0].x -= STEP;
+                else p[0].x += WindowWidth - STEP;
             }
 
             p[0].dir = dir;
             
 
+            /*Sprawdzenie czy wąż zebrał czerwone jabłko*/
             if (p[0].x == coll.getPosition().x && p[0].y == coll.getPosition().y) {
                 size++;
                 score += 10 * scoreMultiplier;
@@ -319,20 +326,24 @@ int main(){
                 
                 while (bad) {                                        
                     coll.randomPosition();
-                    
-                    if (size%buffDelay == 0) {
-                        if (rand() % 2 == 0) {
+                    randomBuff = rand();
+                    /*Co 3 zebrane czerwone jabłka dodatkowo pojawi się bonusowe jabłko*/
+                    if (size % 3 == 0) {
+                        if (randomBuff % 2 == 0) {
                             slowB.randomPosition();
+                            fastB.setPosition(-101, -101);
                         }
                         else {
                             fastB.randomPosition();
+                            slowB.setPosition(-100, -100);
                         }
-                        buffDelay = rand() % 5 + 2;
                     }
                     else {
                         slowB.setPosition(-100, -100);
                         fastB.setPosition(-101, -101);
                     }
+                    /*Sprawdzenie, czy któreś z jabłek nie pojawiło się na którymś z segmentów węża
+                    oraz czy któreś dwa jabłka nie mają tej samej pozycji*/
                     for (int i = 0; i < size; i++) {
                         if ((coll.getPosition().x == p[i].x && coll.getPosition().y == p[i].y)      ||
                             (slowB.getPosition().x == p[i].x && slowB.getPosition().y == p[i].y)    ||
@@ -348,7 +359,7 @@ int main(){
                 }
 
             }
-
+            /*Sprawdzenie czy wąż zebrał zielone jabłko*/
             if (p[0].x == slowB.getPosition().x && p[0].y == slowB.getPosition().y) {
                 slowB.setPosition(-100,-100);
                 score = score / 2;
@@ -359,7 +370,8 @@ int main(){
                 slowSound.play();
                 stepsCounterEnable = true;
             }
-            else if (p[0].x == fastB.getPosition().x && p[0].y == fastB.getPosition().y) {
+            /*Sprawdzenie czy wąż zebrał złote jabłko*/
+            if (p[0].x == fastB.getPosition().x && p[0].y == fastB.getPosition().y) {
                 fastB.setPosition(-101, -101);
                 scoreMultiplier = 5;
                 speed = FAST_SPEED;
@@ -368,6 +380,7 @@ int main(){
                 speedSound.play();
                 stepsCounterEnable = true;
             }
+
 
                 window.draw(gameplayBackground);
             for (int i = size - 1; i >= 0; i--) {
@@ -384,6 +397,8 @@ int main(){
                 else if (speed == FAST_SPEED) window.draw(speedIcon);
                 can_change_dir = true;
                 window.display();
+
+                /*Sprawdzenie ilości kroków w przypadku trwania efektu spowolnienia lub przyspieszenia*/
                 if (stepsCounterEnable) {
                     stepsCounter++;
                     if (stepsCounter > buffDuration) {
@@ -461,17 +476,10 @@ int main(){
             window.display();
             /*------/HOW TO PLAY-----*/
             break;
-
-            /*------PAUSE-----*/
-        case PAUSE:
-            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
-                GAME_STATE = STATES::GAMEPLAY;
-            }
-            /*------/PAUSE-----*/
-            break;
         }
     }
-    return 0;
+    /*----KONIEC CZĘŚCI LOOP----*/
+    return 0;    
 }
 
 

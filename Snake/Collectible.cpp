@@ -21,7 +21,6 @@ sf::Vector2f Collectible::getPosition() {
 void Collectible::randomPosition() {
 	float randX = 40.f * float(rand() % 18) + collWidth/2;
 	float randY = 40.f * float(rand() % 16 + 2) + collHeight/2;
-	//std::cout << randX << std::endl << randY << std::endl;
 	setPosition(randX, randY);
 }
 
