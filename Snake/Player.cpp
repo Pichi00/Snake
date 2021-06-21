@@ -16,9 +16,6 @@ Player::Player(float t_X, float t_Y) {
 	playerSprite.setScale(playerScale, playerScale);
 }
 
-void Player::update( char dir) {
-	playerSprite.move(playerVelocity * playerSpeed);
-}
 
 void Player::setPosition(float t_X, float t_Y) {
 	playerSprite.setPosition(t_X, t_Y);

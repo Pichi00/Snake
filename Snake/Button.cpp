@@ -12,8 +12,6 @@ Button::Button(float t_X, float t_Y) {
 
 	textSprite.setOrigin({ buttonWidth / 2, buttonHeight / 2 });
 	textSprite.setPosition(t_X, t_Y);
-	/*shape.setOutlineThickness(1.0f);
-	shape.setOutlineColor(sf::Color::White);*/
 }
 
 float Button::left() {
