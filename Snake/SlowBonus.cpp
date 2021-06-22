@@ -3,7 +3,7 @@
 SlowBonus::SlowBonus() {
 	srand(time(NULL));
 	if (!collTexture.loadFromFile("Graphics/slow.png")) {
-		std::cout << "Blad ladowania tekstury gracza."<< std::endl;
+		std::cout << "Error: Texture not found."<< std::endl;
 	}
 	collSprite.setTexture(collTexture);
 	collSprite.setOrigin(collWidth / 2, collHeight / 2);
