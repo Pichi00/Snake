@@ -12,7 +12,6 @@
 //Klasy
 #include "Player.h"
 #include "Collectible.h"
-#include "SlowBonus.h"
 #include "Button.h"
 
 /*Wymiary okna*/
